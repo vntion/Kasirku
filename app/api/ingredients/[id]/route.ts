@@ -76,7 +76,10 @@ import { NextRequest, NextResponse } from 'next/server';
  *                   type: boolean
  *                   example: false
  */
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } },
+) {
   const id = Number(params.id);
 
   const { data, error } = await supabaseClient()
@@ -171,7 +174,10 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
  *                   type: boolean
  *                   example: false
  */
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } },
+) {
   const authHeader = request.headers.get('authorization');
   const token = authHeader!.split(' ')[1];
   const id = Number(params.id);
@@ -314,14 +320,14 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
  *                   type: boolean
  *                   example: false
  */
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { id: string } },
+) {
   const authHeader = request.headers.get('authorization');
-  const body = await request.json();
   const id = Number(params.id);
 
   const token = authHeader!.split(' ')[1];
-
-  const { nama, unit, stock, image_url } = body;
 
   const { data: session } = await supabaseClient()
     .from('session_tokens')
@@ -335,6 +341,14 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       { status: 401 },
     );
   }
+
+  const formData = await request.formData();
+  const nama = formData.get('nama') as string;
+  const unit = formData.get('unit') as string;
+  const stock = formData.get('stock') as string;
+  const file = formData.get('image') as File | string;
+
+  const hasImagePath = 
 
   const { data: checkIngredient } = await supabaseClient()
     .from('ingredients')

@@ -225,13 +225,12 @@ export async function POST(request: NextRequest) {
 
     const formData = await request.formData();
     const nama = formData.get('nama') as string;
-    const dekripsi = formData.get('dekripsi') as string;
-    const harga = formData.get('harga') as string;
-    const tersedia = formData.get('tersedia') as string;
-    const kategori_id = formData.get('kategori_id') as string;
-    const file = formData.get('image') as File | null;
+    const description = formData.get('dekripsi') as string;
+    const price = formData.get('harga') as string;
+    const category_id = formData.get('kategori_id') as string;
+    const image = formData.get('image') as File | null;
 
-    const bodyValue = [nama, dekripsi, harga, tersedia, kategori_id];
+    const bodyValue = [nama, description, price, category_id, image];
 
     if (
       bodyValue.some(item => item === undefined || item === null || item === '')
@@ -242,47 +241,41 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let imageUrl = '';
-
-    if (file && file.size > 0) {
-      const fileExt = file.name.split('.').pop() || 'jpg';
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-
-      const { data: uploadData, error: uploadError } = await supabaseClient()
-        .storage.from('menus')
-        .upload(fileName, file, {
-          cacheControl: '3600',
-          upsert: false,
-        });
-
-      if (uploadError) {
-        return NextResponse.json(
-          {
-            message: 'Gagal mengupload gambar',
-            error: uploadError.message,
-            success: false,
-          },
-          { status: 500 },
-        );
-      }
-
-      const { data: publicUrlData } = supabaseClient()
-        .storage.from('menus')
-        .getPublicUrl(uploadData.path);
-
-      imageUrl = publicUrlData.publicUrl;
+    if (!image) {
+      return NextResponse.json(
+        { message: 'Gambar masih kosong', success: false },
+        { status: 400 },
+      );
     }
+
+    const imageName = `${Math.random()}-${nama}`;
+
+    const { data: uploadData, error: uploadErr } = await supabaseClient()
+      .storage.from('menus')
+      .upload(imageName, image);
+
+    if (uploadErr) {
+      return NextResponse.json(
+        { message: 'Gambar gagal di upload', success: false },
+        { status: 500 },
+      );
+    }
+
+    const { data: publicUrlData } = supabaseClient()
+      .storage.from('menus')
+      .getPublicUrl(uploadData.path);
+
+    const newMenu = {
+      name: nama,
+      description,
+      price: Number(price),
+      category_id: Number(category_id),
+      image_url: publicUrlData.publicUrl,
+    };
 
     const { data, error } = await supabaseClient()
       .from('menus')
-      .insert({
-        name: nama,
-        description: dekripsi,
-        price: Number(harga),
-        is_available: tersedia === 'true' || tersedia === '1',
-        category_id: Number(kategori_id),
-        image_url: imageUrl,
-      })
+      .insert(newMenu)
       .select()
       .single();
 

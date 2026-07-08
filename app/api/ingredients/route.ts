@@ -1,6 +1,8 @@
 import { supabaseClient } from '@/utils/client';
 import { NextRequest, NextResponse } from 'next/server';
 
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+
 /**
  * @swagger
  * /api/ingredients:
@@ -231,9 +233,9 @@ export async function POST(request: NextRequest) {
     const nama = formData.get('nama') as string;
     const unit = formData.get('unit') as string;
     const stock = formData.get('stock') as string;
-    const file = formData.get('image') as File | null;
+    const image = formData.get('image') as File | null;
 
-    const bodyValue = [nama, unit, stock, file];
+    const bodyValue = [nama, unit, stock, image];
 
     if (
       bodyValue.some(item => item === undefined || item === null || item === '')
@@ -244,58 +246,56 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let imageUrl = '';
-
-    if (file && file.size > 0) {
-      const fileExt = file.name.split('.').pop() || 'jpg';
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-
-      const { data: uploadData, error: uploadError } = await supabaseClient()
-        .storage.from('ingredients')
-        .upload(fileName, file, {
-          cacheControl: '3600',
-          upsert: false,
-        });
-
-      if (uploadError) {
-        return NextResponse.json(
-          {
-            message: 'Gagal mengupload gambar',
-            error: uploadError.message,
-            success: false,
-          },
-          { status: 500 },
-        );
-      }
-
-      const { data: publicUrlData } = supabaseClient()
-        .storage.from('ingredients')
-        .getPublicUrl(uploadData.path);
-
-      imageUrl = publicUrlData.publicUrl;
+    if (!image) {
+      return NextResponse.json(
+        { message: 'Gambar masih kosong', success: false },
+        { status: 400 },
+      );
     }
 
-    const { data, error } = await supabaseClient()
+    const imageName = `${Math.random()}-${nama}`;
+
+    const { data: uploadData, error: uploadErr } = await supabaseClient()
+      .storage.from('ingredients')
+      .upload(imageName, image);
+
+    if (uploadErr) {
+      return NextResponse.json(
+        { message: 'Gambar gagal di upload', success: false },
+        { status: 500 },
+      );
+    }
+
+    const { data: publicUrlData } = supabaseClient()
+      .storage.from('ingredients')
+      .getPublicUrl(uploadData.path);
+
+    const newIngredient = {
+      name: nama,
+      unit,
+      stock_quantity: Number(stock),
+      image_url: publicUrlData.publicUrl,
+    };
+
+    const { data: newIgntData, error: newIgntErr } = await supabaseClient()
       .from('ingredients')
-      .insert({
-        name: nama,
-        unit: unit,
-        stock_quantity: Number(stock),
-        image_url: imageUrl,
-      })
+      .insert(newIngredient)
       .select()
       .single();
 
-    if (error) {
+    if (newIgntErr) {
       return NextResponse.json(
-        { message: 'Something went wrong', success: false },
+        {
+          message: 'Ingredient gagal ditambahkan',
+          success: false,
+        },
         { status: 500 },
       );
     }
 
     return NextResponse.json({
-      message: 'Bahan baku berhasil ditambahkan',
-      data,
+      message: 'Ingredient berhasil ditambahkan',
+      data: newIgntData,
       success: true,
     });
   } catch (_) {
