@@ -8,7 +8,6 @@ export const metadata: Metadata = {
     'Dokumentasi API interaktif untuk aplikasi KasirKu menggunakan Swagger UI',
 };
 
-export const dynamic = 'force-dynamic';
 
 /**
  * Halaman dokumentasi API di route /docs.
