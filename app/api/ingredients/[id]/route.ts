@@ -195,6 +195,27 @@ export async function DELETE(
     );
   }
 
+  const { data: ingredient } = await supabaseClient()
+    .from('ingredients')
+    .select('image_url')
+    .eq('id', id)
+    .single();
+
+  if (!ingredient) {
+    return NextResponse.json(
+      { message: 'Gambar tidak ditemukan', success: false },
+      { status: 500 },
+    );
+  }
+
+  const urlParts = ingredient.image_url.split('/public/ingredients/');
+
+  if (urlParts.length > 1) {
+    const filePath = decodeURIComponent(urlParts[1]);
+
+    await supabaseClient().storage.from('ingredients').remove([filePath]);
+  }
+
   const { error } = await supabaseClient()
     .from('ingredients')
     .delete()

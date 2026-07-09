@@ -203,6 +203,27 @@ export async function DELETE(
     );
   }
 
+  const { data: menu } = await supabaseClient()
+    .from('menus')
+    .select('image_url')
+    .eq('id', id)
+    .single();
+
+  if (!menu) {
+    return NextResponse.json(
+      { message: 'Gambar tidak ditemukan', success: false },
+      { status: 500 },
+    );
+  }
+
+  const urlParts = menu.image_url.split('/public/ingredients/');
+
+  if (urlParts.length > 1) {
+    const filePath = decodeURIComponent(urlParts[1]);
+
+    await supabaseClient().storage.from('menus').remove([filePath]);
+  }
+
   const { error } = await supabaseClient().from('menus').delete().eq('id', id);
 
   if (error) {

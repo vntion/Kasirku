@@ -270,6 +270,8 @@ export async function POST(request: NextRequest) {
       .storage.from('ingredients')
       .upload(imageName, image);
 
+    console.log(uploadErr);
+
     if (uploadErr) {
       return NextResponse.json(
         { message: 'Gambar gagal di upload', success: false },
