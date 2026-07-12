@@ -80,9 +80,7 @@ export async function GET(request: NextRequest) {
 
   let menuQuery = supabaseClient()
     .from('menus')
-    .select(
-      'id, name, description, price, is_available, image_url, categories(id, name)',
-    );
+    .select('id, name, description, price, image_url, categories(id, name)');
 
   if (categoryId && categoryId !== '0') {
     menuQuery = menuQuery.eq('category_id', Number(categoryId));
@@ -95,6 +93,7 @@ export async function GET(request: NextRequest) {
   const { data, error } = await menuQuery;
 
   if (error) {
+    console.log(error);
     return NextResponse.json(
       { message: 'Something went wrong', success: false },
       { status: 500 },
