@@ -46,7 +46,10 @@ import { NextRequest, NextResponse } from 'next/server';
  *                   example: false
  */
 export async function GET() {
-  const { data, error } = await supabaseClient().from('categories').select('*');
+  const { data, error } = await supabaseClient()
+    .from('categories')
+    .select('*')
+    .is('deleted_at', null);
 
   if (error) {
     return NextResponse.json(

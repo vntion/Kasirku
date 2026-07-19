@@ -59,7 +59,10 @@ import { NextRequest, NextResponse } from 'next/server';
  *                   type: boolean
  *                   example: false
  */
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } },
+) {
   const authHeader = request.headers.get('authorization');
   const token = authHeader!.split(' ')[1];
   const id = Number(params.id);
@@ -77,14 +80,27 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     );
   }
 
+  const { data: category } = await supabaseClient()
+    .from('categories')
+    .select('id')
+    .eq('id', id)
+    .single();
+
+  if (!category) {
+    return NextResponse.json(
+      { message: 'Kategori tidak ditemukan', success: false },
+      { status: 404 },
+    );
+  }
+
   const { error } = await supabaseClient()
     .from('categories')
-    .delete()
+    .update({ deleted_at: new Date() })
     .eq('id', id);
 
   if (error) {
     return NextResponse.json(
-      { message: 'Something went wrong', success: false },
+      { message: 'Kategori gagal dihapus', success: false },
       { status: 500 },
     );
   }
@@ -94,7 +110,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       message: 'Kategori berhasil dihapus',
       success: true,
     },
-    { status: 204 },
+    { status: 200 },
   );
 }
 
@@ -202,7 +218,10 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
  *                   type: boolean
  *                   example: false
  */
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { id: string } },
+) {
   const authHeader = request.headers.get('authorization');
   const body = await request.json();
   const id = Number(params.id);

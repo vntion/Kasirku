@@ -90,10 +90,10 @@ export async function GET(request: NextRequest) {
     menuQuery = menuQuery.ilike('name', `%${searchQuery}%`);
   }
 
-  const { data, error } = await menuQuery;
+  const { data, error } = await menuQuery.is('deleted_at', null);
 
   if (error) {
-    console.log(error);
+    console.log(error.cause);
     return NextResponse.json(
       { message: 'Something went wrong', success: false },
       { status: 500 },

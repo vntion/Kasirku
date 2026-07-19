@@ -211,8 +211,8 @@ export async function DELETE(
 
   if (!menu) {
     return NextResponse.json(
-      { message: 'Gambar tidak ditemukan', success: false },
-      { status: 500 },
+      { message: 'Menu tidak ditemukan', success: false },
+      { status: 404 },
     );
   }
 
@@ -224,21 +224,24 @@ export async function DELETE(
     await supabaseClient().storage.from('menus').remove([filePath]);
   }
 
-  const { error } = await supabaseClient().from('menus').delete().eq('id', id);
+  const { error } = await supabaseClient()
+    .from('menus')
+    .update({ deleted_at: new Date() })
+    .eq('id', id);
 
   if (error) {
     return NextResponse.json(
-      { message: 'Something went wrong', success: false },
+      { message: 'Menu gagal dihapus', success: false },
       { status: 500 },
     );
   }
 
   return NextResponse.json(
     {
-      message: 'Kategori berhasil dihapus',
+      message: 'Menu berhasil dihapus',
       success: true,
     },
-    { status: 204 },
+    { status: 200 },
   );
 }
 
